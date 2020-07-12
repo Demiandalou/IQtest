@@ -13,7 +13,7 @@ train_ratio=0.8
 data_file={'question':'seq-public.json','answer':'seq-public.answer.json',\
         'train':'seq-train.json','valid':'seq-valid.json'}
 
-def main():
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--data_dir",
                         default='../data',
@@ -76,6 +76,3 @@ def main():
     json.dump(train_dict, train_file, indent=2, sort_keys=True, ensure_ascii=False)
     json.dump(valid_dict, valid_file, indent=2, sort_keys=True, ensure_ascii=False)
 
-
-if __name__ == "__main__":
-    main()
