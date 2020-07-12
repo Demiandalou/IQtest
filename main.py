@@ -88,6 +88,7 @@ if __name__ == "__main__":
         curid=str(option_file[i]["id"])
         seqdict[curid]={"stem": option_file[i]["stem"], "options": option_file[i]["options"], "category": option_file[i]["category"]}
 
+    # data class for train and valid set
     if args.norm==0:
         seq_train_data = SeqData_minmax(args.data_dir, data_file['train'])
         seq_valid_data = SeqData_minmax(args.data_dir, data_file['valid'])
@@ -96,6 +97,7 @@ if __name__ == "__main__":
         seq_valid_data = SeqData_normbylen(args.data_dir, data_file['valid'])
     seqrnn = SeqRNN(INPUT_SIZE, args.hidden_size, OUTPUT_SIZE)
 
+    # train epochs
     n_iters = args.niters
     print_every = n_iters/10
     plot_every = n_iters/40
@@ -135,7 +137,7 @@ if __name__ == "__main__":
             vad_acc.append(curacc)
             current_loss = 0
             curvad_loss=0
-
+    #plot
     fig, (ax1, ax2)= plt.subplots(1,2, figsize = (10,5))
     ax1.plot(train_losses,label='train loss')
     ax1.plot(vad_loss,label='valid loss')
@@ -146,7 +148,7 @@ if __name__ == "__main__":
     yList=[vad_acc[i*2] for i in range(xaxis_len)]
     for x, y in zip(xList, yList):
 	    ax2.text(x*2, y, '%.1f'%(y*100), ha='center', va='bottom', fontsize=5)
-    
+    # save result
     plt.title(str(n_iters/10000)+'w iters '+'lr'+str(args.lr)+'_hidden'+str(args.hidden_size)+'_norm'+str(int(args.norm)),pad=20)
     img_path=os.path.join(args.output_dir,'train_eval'+str(n_iters/10000)+'w_'+'lr'+str(args.lr)+'_hidden'+str(args.hidden_size)+'_norm'+str(int(args.norm))+'.png')
     if args.save==1:
