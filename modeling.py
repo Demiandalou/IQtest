@@ -22,7 +22,10 @@ def split_input(stem):
     for i in range(len(tmplist)):
         if "/" in tmplist[i]:
             field=tmplist[i].split('/')
-            tmplist[i]=float(field[0])/float(field[1])
+            try:
+                tmplist[i]=float(field[0])/float(field[1])
+            except:
+                continue
         elif "√" in tmplist[i]:
             field=tmplist[i].strip(' ').split('√')
             if field[0]=='':
@@ -56,7 +59,11 @@ def accuracy(cnt,right,op,recover_output,recover_value):
             elif isinstance(op[j], str) and "," in op[j]:
                 field=op[j].split(',')
                 op[j]=int(field[-1])
-            diff.append(abs(recover_output-float(op[j])))
+            try:
+                diff.append(abs(recover_output-float(op[j])))
+            except:
+                op[j]=float(op[j].split(' ')[-1])
+                diff.append(abs(recover_output-op[j]))
         # the most similar option to output
         ans=op[diff.index(min(diff))]
         cnt+=1
@@ -87,7 +94,8 @@ class SeqData_minmax(Dataset):
         self.df=pd.DataFrame(self.consistent)
         self.scaler.fit_transform(self.df)
         self.length=len(self.seqlist)
-        
+    
+    
     def __getitem__(self,index):
         res=self.seqlist[index][:]
         res=[self.scaler.transform(np.array([res[i]])) for i in range(len(res))]
@@ -167,10 +175,12 @@ class SeqData_normbylen(Dataset):
             return res
 
     #norm by len
-    def cal_accuracy(self,seqrnn,seqdict):
+    def cal_accuracy(self,seqrnn,seqdict,gen_answer=False):
         setlen=self.length
         right=0
         cnt=0
+        if gen_answer==True:
+            ans_dict={}
         # for each sequence, find the most similar option to the output of network
         # if the chosen option is the answer, the output is accurate
         for i in range(setlen):
@@ -186,7 +196,13 @@ class SeqData_normbylen(Dataset):
             recover_output=output*(10**maxlen)
 
             cnt,right=accuracy(cnt,right,op,recover_output,real_value)
-        return right/cnt
+            if gen_answer==True:
+                recover_output=round(recover_output,2)
+                ans_dict[curID]={'pred_answer':[recover_output]}
+        if gen_answer==False:
+            return right/cnt
+        else:
+            return ans_dict,right/cnt
 
 # RNN module
 class SeqRNN(nn.Module):
