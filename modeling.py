@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, DataLoader
 import math
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler 
-
+options_dic={0:'A',1:'B',2:'C',3:'D'}
 # This function takes a sequence in, convert its element to floats,
 # and split the sequence to multiple overlapping sub-sequence of length three.
 def split_input(stem):
@@ -45,7 +45,8 @@ def split_input(stem):
 
 # This function takes real answer to sequence question and the predicted value
 # and judge if the prediction is correct
-def accuracy(cnt,right,op,recover_output,recover_value):
+def accuracy(cnt,right,op,recover_output,recover_value,gen_ans=False):
+    ans_idx=None
     if len(op)==0:
         if abs(int(recover_output)-recover_value)<0.01:
             right+=1
@@ -65,11 +66,15 @@ def accuracy(cnt,right,op,recover_output,recover_value):
                 op[j]=float(op[j].split(' ')[-1])
                 diff.append(abs(recover_output-op[j]))
         # the most similar option to output
-        ans=op[diff.index(min(diff))]
+        ans_idx=diff.index(min(diff))
+        ans=op[ans_idx]
         cnt+=1
         if abs(float(ans)-recover_value)<0.01:
             right+=1
-    return cnt,right
+    if gen_ans==False:
+        return cnt,right
+    else:
+        return cnt,right,ans_idx
 
 # data class for train and valid set, normalize data using min max scaler
 class SeqData_minmax(Dataset):
@@ -194,10 +199,14 @@ class SeqData_normbylen(Dataset):
                 output, hidden = seqrnn(data[i].float(), hidden)
             output=output[0][0].item()
             recover_output=output*(10**maxlen)
-
-            cnt,right=accuracy(cnt,right,op,recover_output,real_value)
-            if gen_answer==True:
-                recover_output=round(recover_output,2)
+            if gen_answer==False:
+                cnt,right=accuracy(cnt,right,op,recover_output,real_value)
+            else:
+                cnt,right,ans_idx=accuracy(cnt,right,op,recover_output,real_value,gen_answer)
+                if ans_idx==None:
+                    recover_output=round(recover_output,2)
+                else:
+                    recover_output=options_dic[ans_idx]
                 ans_dict[curID]={'pred_answer':[recover_output]}
         if gen_answer==False:
             return right/cnt
